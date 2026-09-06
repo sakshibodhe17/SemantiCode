@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "install",
+      "path": "frontend/extension",
+      "label": "install extension deps",
+      "detail": "npm install inside frontend/extension/",
+      "problemMatcher": []
+    },
+    {
+      "type": "npm",
+      "script": "build-webview",
+      "path": "frontend/extension",
+      "label": "build webview UI",
+      "detail": "Builds the React webview UI used inside the extension.",
+      "problemMatcher": []
+    },
+    {
+      "type": "npm",
+      "script": "compile",
+      "path": "frontend/extension",
+      "label": "compile extension",
+      "detail": "Bundles frontend/extension/src/extension.ts into frontend/extension/dist/extension.js.",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "build SemantiCode (webview + extension)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "install extension deps",
+        "build webview UI",
+        "compile extension"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

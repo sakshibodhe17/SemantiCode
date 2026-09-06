@@ -1,0 +1,90 @@
+{
+  "name": "semanticode",
+  "displayName": "SemantiCode — Semantic Code Search",
+  "description": "Search your codebase using natural language, from inside VS Code. GUI prototype for Evaluation 2 (Input & Output Design) of the Semantic Code Search Engine MCA mini-project.",
+  "version": "0.1.0",
+  "publisher": "semanticode-mca-project",
+  "private": true,
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onView:semanticode.sidebar"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "semanticode",
+          "title": "SemantiCode",
+          "icon": "media/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "semanticode": [
+        {
+          "type": "webview",
+          "id": "semanticode.sidebar",
+          "name": "Semantic Code Search"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "semanticode.focus",
+        "title": "SemantiCode: Open Semantic Code Search"
+      },
+      {
+        "command": "semanticode.indexWorkspace",
+        "title": "SemantiCode: Index Workspace"
+      },
+      {
+        "command": "semanticode.searchCode",
+        "title": "SemantiCode: Search Code"
+      },
+      {
+        "command": "semanticode.openAdminDashboard",
+        "title": "SemantiCode: Open Admin Dashboard (secondary/conceptual)"
+      }
+    ],
+    "configuration": {
+      "title": "SemantiCode",
+      "properties": {
+        "semanticode.topK": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Default number of results returned per semantic search query."
+        },
+        "semanticode.supportedLanguages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["Python", "JavaScript", "TypeScript", "Java", "C", "C++", "Go"],
+          "description": "Languages SemantiCode will index. (Placeholder for this milestone — Tree-sitter language support is not implemented yet.)"
+        },
+        "semanticode.embeddingModel": {
+          "type": "string",
+          "default": "microsoft/codebert-base",
+          "description": "Embedding model used to generate code vectors. (Placeholder — CodeBERT integration is a future milestone.)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "build-webview": "cd ../webview-ui && npm install && npm run build",
+    "typecheck": "tsc --noEmit -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.4"
+  }
+}

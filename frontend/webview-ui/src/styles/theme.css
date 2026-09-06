@@ -1,0 +1,104 @@
+/*
+ * Theme tokens.
+ *
+ * Real VS Code webviews inject `--vscode-*` CSS custom properties that
+ * track the user's active color theme (dark, light, high-contrast).
+ * We read those first and fall back to a Dark+ -like palette so the
+ * exact same build also looks correct standalone in a plain browser
+ * (used for design review and the automated screenshot checks).
+ */
+
+:root {
+  --sc-bg: var(--vscode-editor-background, #1e1e1e);
+  --sc-sidebar-bg: var(--vscode-sideBar-background, #181818);
+  --sc-elevated-bg: var(--vscode-editorWidget-background, #252526);
+  --sc-hover-bg: var(--vscode-list-hoverBackground, #2a2d2e);
+  --sc-active-bg: var(--vscode-list-activeSelectionBackground, #04395e);
+
+  --sc-fg: var(--vscode-foreground, #cccccc);
+  --sc-fg-muted: var(--vscode-descriptionForeground, #9d9d9d);
+  --sc-fg-faint: #6e7681;
+
+  --sc-border: var(--vscode-panel-border, #3c3c3c);
+  --sc-input-bg: var(--vscode-input-background, #3c3c3c);
+  --sc-input-border: var(--vscode-input-border, #3c3c3c);
+  --sc-input-fg: var(--vscode-input-foreground, #cccccc);
+  --sc-focus-border: var(--vscode-focusBorder, #007fd4);
+
+  --sc-button-bg: var(--vscode-button-background, #0e639c);
+  --sc-button-fg: var(--vscode-button-foreground, #ffffff);
+  --sc-button-hover-bg: var(--vscode-button-hoverBackground, #1177bb);
+  --sc-button-secondary-bg: var(--vscode-button-secondaryBackground, #3a3d41);
+  --sc-button-secondary-fg: var(--vscode-button-secondaryForeground, #cccccc);
+  --sc-button-secondary-hover-bg: var(--vscode-button-secondaryHoverBackground, #45494e);
+
+  --sc-badge-bg: var(--vscode-badge-background, #4d4d4d);
+  --sc-badge-fg: var(--vscode-badge-foreground, #ffffff);
+
+  --sc-link: var(--vscode-textLink-foreground, #3794ff);
+  --sc-success: var(--vscode-testing-iconPassed, #89d185);
+  --sc-warning: var(--vscode-editorWarning-foreground, #cca700);
+  --sc-error: var(--vscode-editorError-foreground, #f14c4c);
+
+  --sc-font-ui: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  --sc-font-mono: var(--vscode-editor-font-family, "SF Mono", Consolas, "Courier New", monospace);
+
+  --sc-radius: 3px;
+  --sc-space-1: 4px;
+  --sc-space-2: 8px;
+  --sc-space-3: 12px;
+  --sc-space-4: 16px;
+  --sc-space-5: 24px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--sc-bg);
+  color: var(--sc-fg);
+  font-family: var(--sc-font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5a5a5a;
+}
+
+code, pre, .sc-mono {
+  font-family: var(--sc-font-mono);
+}
+
+a {
+  color: var(--sc-link);
+}
+
+button {
+  font-family: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 1px solid var(--sc-focus-border);
+  outline-offset: 1px;
+}
