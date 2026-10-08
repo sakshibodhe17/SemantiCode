@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 import jwt as pyjwt
 
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-secret-change-me")
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "development-only-change-this-to-a-32-byte-secret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 

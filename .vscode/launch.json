@@ -2,14 +2,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run SemantiCode Backend",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "uvicorn",
-      "args": ["backend.main:app", "--reload", "--port", "8000"],
-      "console": "integratedTerminal"
-    },
-    {
       "name": "Run SemantiCode Extension",
       "type": "extensionHost",
       "request": "launch",
@@ -19,6 +11,14 @@
       ],
       "outFiles": ["${workspaceFolder}/frontend/extension/dist/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}"
+    },
+    {
+      "name": "Run SemantiCode Backend",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["backend.main:app", "--reload", "--port", "8000"],
+      "console": "integratedTerminal"
     }
   ]
 }
