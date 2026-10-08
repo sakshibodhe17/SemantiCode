@@ -15,6 +15,7 @@ venv/
 .env
 .env.*
 !.env.example
+backend/semanticode.db
 
 # Editor/OS
 .DS_Store

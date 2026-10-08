@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 from backend.auth.jwt import create_access_token
 from backend.db.connection import get_db_session
-from backend.models.user import User
+from backend.models.user import LoginAttempt, User
 
 
 def get_user(username: str) -> User | None:
@@ -50,13 +50,5 @@ def authenticate_user(username: str, password: str):
 def record_login_attempt(username: str, success: bool) -> None:
     """Persist a login attempt for auditing and rate-limiting."""
     with get_db_session() as session:
-        session.execute(
-            "INSERT INTO login_attempts (username, success, attempted_at) "
-            "VALUES (:username, :success, :attempted_at)",
-            {
-                "username": username,
-                "success": success,
-                "attempted_at": datetime.utcnow(),
-            },
-        )
+        session.add(LoginAttempt(username=username, success=success, attempted_at=datetime.utcnow()))
         session.commit()

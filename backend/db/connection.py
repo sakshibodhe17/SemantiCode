@@ -10,15 +10,20 @@ the same code works in development, testing, and production.
 import os
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine
+from pathlib import Path
+
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql+psycopg2://semanticode:semanticode@localhost:5432/semanticode",
-)
+BASE_DIR = Path(__file__).resolve().parents[1]
+# SQLite makes the project immediately runnable for a classroom demo.  Set
+# DATABASE_URL to a PostgreSQL URL in production without changing any routes.
+DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR / 'semanticode.db'}")
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_size=10)
+engine_options = {"pool_pre_ping": True}
+if DATABASE_URL.startswith("sqlite"):
+    engine_options["connect_args"] = {"check_same_thread": False}
+engine = create_engine(DATABASE_URL, **engine_options)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
@@ -48,7 +53,7 @@ def check_connection() -> bool:
     """Ping the database to confirm connectivity (used by health checks)."""
     try:
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            conn.execute(text("SELECT 1"))
         return True
     except Exception:
         return False

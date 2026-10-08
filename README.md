@@ -271,3 +271,51 @@ cloud sandbox this was built in). The extension manifest, TypeScript, and
 bundle all follow the standard `esbuild`-based VS Code extension template
 and compile cleanly; F5 in a real VS Code install is the remaining check,
 covered by the demo flow above.
+
+---
+
+## 10. Runnable backend and database (Evaluation 3 foundation)
+
+The project now includes a working **FastAPI backend** in `backend/`.
+It uses **SQLite by default**, so it creates `backend/semanticode.db`
+automatically and no separate database installation is required for the
+college demonstration. The database design is portable: setting
+`DATABASE_URL` to a PostgreSQL SQLAlchemy URL moves the same ORM models to
+PostgreSQL for deployment.
+
+### What is real now
+
+| Component | Purpose |
+| --- | --- |
+| `POST /api/index` | Reads a local project, extracts Python functions/classes using the Python AST, and stores searchable chunks in the database. |
+| `POST /api/search` | Returns ranked code chunks for a natural-language-like query. The current offline ranking is token overlap; this makes the backend demonstrable without downloading a large ML model. |
+| `GET /api/workspace/{id}/status` | Returns index statistics and the time it was built. |
+| `GET /api/search/history/{id}` | Returns persisted search activity. |
+| `POST /api/auth/register`, `POST /api/auth/login` | Stores password hashes, checks credentials, and returns JWT bearer tokens. |
+| `GET /health` | Confirms that the API and database connection are healthy. |
+
+### Run the backend
+
+From the repository root in the VS Code terminal:
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cd ..
+python -m uvicorn backend.main:app --reload --port 8000
+```
+
+Open `http://127.0.0.1:8000/docs` to use FastAPI's automatic interactive
+API documentation. First call `POST /api/index` with a folder containing
+source code (for example, `{"workspace_id":"semanticode","path":"."}`),
+then call `POST /api/search` with
+`{"workspace_id":"semanticode","query":"JWT authentication","top_k":5}`.
+
+The current VS Code UI remains deliberately able to run without an API and
+uses its existing mock search data. The FastAPI API is ready for the next
+step of wiring real workspace indexing/search requests through the VS Code
+extension host; this avoids pretending the UI is already connected when it
+is not.
+
+

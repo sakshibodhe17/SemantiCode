@@ -9,6 +9,8 @@ only deals with request/response shapes and HTTP status codes.
 from fastapi import APIRouter, HTTPException, status
 
 from backend.auth.service import authenticate_user, record_login_attempt
+from backend.db.connection import get_db_session
+from backend.models.user import User
 from backend.schemas.auth import LoginRequest, LoginResponse, RegisterRequest
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -39,8 +41,15 @@ def login(payload: LoginRequest):
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest):
     """Create a new user account."""
-    # Delegates to the user service; kept as a stub in this sample repo.
-    raise HTTPException(status_code=501, detail="Not implemented in sample repo")
+    from passlib.hash import bcrypt
+
+    with get_db_session() as session:
+        if session.query(User).filter((User.username == payload.username) | (User.email == payload.email)).first():
+            raise HTTPException(status_code=409, detail="Username or email already exists")
+        user = User(username=payload.username, email=payload.email, password_hash=bcrypt.hash(payload.password))
+        session.add(user)
+        session.commit()
+    return {"status": "created"}
 
 
 @router.post("/logout")
