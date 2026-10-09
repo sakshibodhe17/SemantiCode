@@ -7,7 +7,7 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}/frontend/extension",
-        "${workspaceFolder}/demo-project"
+        "${workspaceFolder}"
       ],
       "outFiles": ["${workspaceFolder}/frontend/extension/dist/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}"
