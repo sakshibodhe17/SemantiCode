@@ -8,7 +8,7 @@ export function Header({ workspace }: { workspace: WorkspaceInfo }) {
         <span className="sc-header__mark">◆</span>
         <div>
           <div className="sc-header__title">SemantiCode</div>
-          <div className="sc-header__subtitle">Search code by meaning.</div>
+          <div className="sc-header__subtitle">Search code by what it does.</div>
         </div>
       </div>
       <div className="sc-header__workspace" title={workspace.path}>
@@ -19,6 +19,8 @@ export function Header({ workspace }: { workspace: WorkspaceInfo }) {
               ? "indexed"
               : workspace.status === "indexing"
               ? "indexing"
+              : workspace.status === "error"
+              ? "error"
               : "not-indexed"
           }
         />

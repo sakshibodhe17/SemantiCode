@@ -21,3 +21,10 @@ backend/semanticode.db
 .DS_Store
 *.log
 .vscode/*.log
+
+# SemantiCode build output / runtime data
+frontend/extension/webview/
+*.vsix
+backend/uploads/repositories/
+backend/uploads/files/
+.pytest_cache/

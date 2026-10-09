@@ -1,0 +1,12 @@
+# Only dist/, webview/, media/, package.json, README.md, CHANGELOG.md and
+# LICENSE need to ship — the extension is fully bundled by esbuild.
+src/**
+test/**
+node_modules/**
+.vscode/**
+tsconfig.json
+esbuild.js
+**/*.map
+**/*.ts
+package-lock.json
+media/icon.svg

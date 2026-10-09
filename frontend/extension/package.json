@@ -1,16 +1,39 @@
 {
   "name": "semanticode",
   "displayName": "SemantiCode — Semantic Code Search",
-  "description": "Search your codebase using natural language, from inside VS Code. GUI prototype for Evaluation 2 (Input & Output Design) of the Semantic Code Search Engine MCA mini-project.",
-  "version": "0.1.0",
-  "publisher": "semanticode-mca-project",
-  "private": true,
+  "description": "Ask your codebase questions in plain English (\"where is the JWT token created?\") and jump straight to the right function. Offline, private, explainable.",
+  "version": "1.0.0",
+  "publisher": "semanticode",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#0b2a4a",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR-GITHUB-USERNAME/semanticode"
+  },
+  "keywords": [
+    "search",
+    "semantic search",
+    "code search",
+    "natural language",
+    "find function",
+    "navigation",
+    "codebase",
+    "bm25",
+    "offline"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other"],
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
   "activationEvents": [
-    "onView:semanticode.sidebar"
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -35,19 +58,80 @@
     "commands": [
       {
         "command": "semanticode.focus",
-        "title": "SemantiCode: Open Semantic Code Search"
+        "title": "Open Semantic Code Search",
+        "category": "SemantiCode"
       },
       {
-        "command": "semanticode.indexWorkspace",
-        "title": "SemantiCode: Index Workspace"
+        "command": "semanticode.quickSearch",
+        "title": "Quick Search by Meaning…",
+        "category": "SemantiCode",
+        "icon": "$(search)"
       },
       {
         "command": "semanticode.searchCode",
-        "title": "SemantiCode: Search Code"
+        "title": "Search Code (Sidebar)",
+        "category": "SemantiCode"
       },
       {
-        "command": "semanticode.openAdminDashboard",
-        "title": "SemantiCode: Open Admin Dashboard (secondary/conceptual)"
+        "command": "semanticode.findSimilar",
+        "title": "Find Similar Code",
+        "category": "SemantiCode"
+      },
+      {
+        "command": "semanticode.indexWorkspace",
+        "title": "Index Workspace",
+        "category": "SemantiCode",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "semanticode.clearIndex",
+        "title": "Clear Index",
+        "category": "SemantiCode"
+      },
+      {
+        "command": "semanticode.showInsights",
+        "title": "Show Index Insights",
+        "category": "SemantiCode",
+        "icon": "$(graph)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "semanticode.findSimilar",
+          "when": "editorHasSelection",
+          "group": "navigation@90"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "semanticode.quickSearch",
+          "when": "view == semanticode.sidebar",
+          "group": "navigation@1"
+        },
+        {
+          "command": "semanticode.indexWorkspace",
+          "when": "view == semanticode.sidebar",
+          "group": "navigation@2"
+        },
+        {
+          "command": "semanticode.showInsights",
+          "when": "view == semanticode.sidebar",
+          "group": "navigation@3"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "semanticode.quickSearch",
+        "key": "ctrl+alt+shift+f",
+        "mac": "cmd+alt+shift+f"
+      },
+      {
+        "command": "semanticode.findSimilar",
+        "key": "ctrl+alt+shift+s",
+        "mac": "cmd+alt+shift+s",
+        "when": "editorHasSelection"
       }
     ],
     "configuration": {
@@ -58,28 +142,72 @@
           "default": 10,
           "minimum": 1,
           "maximum": 50,
-          "description": "Default number of results returned per semantic search query."
+          "description": "Number of results returned per search."
         },
         "semanticode.supportedLanguages": {
           "type": "array",
-          "items": { "type": "string" },
-          "default": ["Python", "JavaScript", "TypeScript", "Java", "C", "C++", "Go"],
-          "description": "Languages SemantiCode will index. (Placeholder for this milestone — Tree-sitter language support is not implemented yet.)"
+          "items": {
+            "type": "string",
+            "enum": ["Python", "JavaScript", "TypeScript", "Java", "C", "C++", "Go", "C#", "PHP", "Rust", "Kotlin", "Ruby"]
+          },
+          "default": ["Python", "JavaScript", "TypeScript", "Java", "C", "C++", "Go", "C#", "PHP", "Rust", "Kotlin", "Ruby"],
+          "description": "Languages whose source files are indexed."
         },
-        "semanticode.embeddingModel": {
+        "semanticode.exclude": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Extra glob patterns to skip while indexing (node_modules, .git, dist, build, venv … are always skipped)."
+        },
+        "semanticode.maxFiles": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1,
+          "description": "Maximum number of source files to index."
+        },
+        "semanticode.maxFileSizeKB": {
+          "type": "number",
+          "default": 512,
+          "minimum": 1,
+          "description": "Files larger than this are skipped (usually generated or minified code)."
+        },
+        "semanticode.autoIndexOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Keep the index up to date by re-parsing files when they are saved, created or deleted."
+        },
+        "semanticode.queryExpansion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Expand queries with related programming concepts (e.g. login ↔ authenticate ↔ jwt)."
+        },
+        "semanticode.engine": {
           "type": "string",
-          "default": "microsoft/codebert-base",
-          "description": "Embedding model used to generate code vectors. (Placeholder — CodeBERT integration is a future milestone.)"
+          "enum": ["local", "backend"],
+          "enumDescriptions": [
+            "Built-in offline engine (recommended).",
+            "Send index/search requests to the SemantiCode FastAPI backend."
+          ],
+          "default": "local",
+          "description": "Which search engine to use."
+        },
+        "semanticode.backendUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:8000",
+          "description": "Base URL of the SemantiCode FastAPI backend (used when engine = backend)."
         }
       }
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run build-webview && npm run compile",
     "compile": "node esbuild.js --production",
     "watch": "node esbuild.js --watch",
     "build-webview": "cd ../webview-ui && npm install && npm run build",
-    "typecheck": "tsc --noEmit -p ./"
+    "typecheck": "tsc --noEmit -p ./",
+    "test:engine": "npx tsx test/engine.test.ts ../../backend",
+    "package": "npx @vscode/vsce package",
+    "publish": "npx @vscode/vsce publish"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

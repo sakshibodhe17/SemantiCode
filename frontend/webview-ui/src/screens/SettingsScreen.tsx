@@ -1,26 +1,22 @@
-import type { SemantiCodeSettings } from "../data/types";
+import type { Settings } from "../data/types";
 import { SettingsPanel } from "../components/SettingsPanel";
 
 export function SettingsScreen({
   settings,
-  onTopKChange,
-  onToggleLanguage,
+  onChange,
+  onOpenVsCodeSettings,
 }: {
-  settings: SemantiCodeSettings;
-  onTopKChange: (n: number) => void;
-  onToggleLanguage: (lang: string) => void;
+  settings: Settings;
+  onChange: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
+  onOpenVsCodeSettings: () => void;
 }) {
   return (
     <div className="sc-screen">
       <div className="sc-screen__heading">
         <h2>Settings</h2>
-        <p className="sc-fg-muted">Semantic Code Search configuration.</p>
+        <p className="sc-fg-muted">Stored as real VS Code settings (<span className="sc-mono">semanticode.*</span>).</p>
       </div>
-      <SettingsPanel
-        settings={settings}
-        onTopKChange={onTopKChange}
-        onToggleLanguage={onToggleLanguage}
-      />
+      <SettingsPanel settings={settings} onChange={onChange} onOpenVsCodeSettings={onOpenVsCodeSettings} />
     </div>
   );
 }

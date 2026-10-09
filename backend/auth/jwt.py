@@ -7,7 +7,7 @@ to change in one place.
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt as pyjwt
 
@@ -18,7 +18,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 def create_access_token(user, expires_minutes: int = ACCESS_TOKEN_EXPIRE_MINUTES) -> str:
     """Create a signed JWT access token for an authenticated user."""
-    expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
     payload = {
         "sub": str(user.id),
         "username": user.username,
@@ -54,6 +54,6 @@ def refresh_access_token(token: str) -> str | None:
         "sub": claims["sub"],
         "username": claims["username"],
         "role": claims["role"],
-        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     }
     return pyjwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)

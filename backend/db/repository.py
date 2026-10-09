@@ -26,7 +26,7 @@ class UserRepository:
     def get_by_id(self, user_id: int) -> User | None:
         """Look up a single user by primary key."""
         with get_db_session() as session:
-            return session.query(User).get(user_id)
+            return session.get(User, user_id)
 
     def create(self, username: str, email: str, password_hash: str) -> User:
         """Insert a new user row and return the created record."""

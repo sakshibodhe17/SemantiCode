@@ -1,9 +1,12 @@
-import type { IndexingStepState, IndexStats } from "../data/types";
+import type { IndexingStepState, IndexProgress, WorkspaceStats } from "../data/types";
 import { IndexingProgress } from "../components/IndexingProgress";
+import { ErrorState } from "../components/EmptyState";
 import { Icon } from "../components/Icon";
 
 export function IndexingScreen({
   steps,
+  progress,
+  error,
   stats,
   isComplete,
   isRunning,
@@ -11,33 +14,36 @@ export function IndexingScreen({
   onGoToSearch,
 }: {
   steps: IndexingStepState[];
-  stats: IndexStats | null;
+  progress: IndexProgress | null;
+  error: string | null;
+  stats: WorkspaceStats | null;
   isComplete: boolean;
   isRunning: boolean;
   onStart: () => void;
   onGoToSearch: () => void;
 }) {
-  const notStarted = !isRunning && !isComplete;
-
+  const showProgress = isRunning || progress !== null || isComplete;
   return (
     <div className="sc-screen">
       <div className="sc-screen__heading">
         <h2>Index Workspace</h2>
         <p className="sc-fg-muted">
-          Scans the workspace, parses code with Tree-sitter, and builds
-          embeddings + a FAISS vector index. Simulated for this milestone.
+          Scans the open folder, extracts functions, methods and classes, and builds a local
+          BM25F index. Re-indexing only re-parses files that changed.
         </p>
       </div>
 
-      {notStarted && (
+      {error && <ErrorState title="Indexing failed" description={error} onRetry={onStart} />}
+
+      {!isRunning && !error && (
         <button type="button" className="sc-btn sc-btn--primary" onClick={onStart}>
           <Icon name="index" size={14} />
-          Start Indexing
+          {isComplete ? "Re-index Workspace" : "Start Indexing"}
         </button>
       )}
 
-      {(isRunning || isComplete) && (
-        <IndexingProgress steps={steps} stats={stats} isComplete={isComplete} />
+      {showProgress && !error && (
+        <IndexingProgress steps={isComplete && !progress ? steps.map((s) => ({ ...s, status: "done" })) : steps} progress={progress} stats={stats} isComplete={isComplete} />
       )}
 
       {isComplete && (

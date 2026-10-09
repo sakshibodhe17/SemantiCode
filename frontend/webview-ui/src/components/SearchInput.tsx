@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { Icon } from "./Icon";
 
 export function SearchInput({
@@ -9,6 +9,7 @@ export function SearchInput({
   topK,
   onTopKChange,
   isSearching,
+  focusToken = 0,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -17,17 +18,22 @@ export function SearchInput({
   topK: number;
   onTopKChange: (n: number) => void;
   isSearching: boolean;
+  focusToken?: number;
 }) {
   const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [focusToken]);
   const trimmed = value.trim();
-  const isInvalid = value.length > 0 && trimmed.length < 4;
+  const isInvalid = value.length > 0 && trimmed.length < 3;
 
   return (
     <form
       className="sc-search-form"
       onSubmit={(e) => {
         e.preventDefault();
-        if (trimmed.length >= 4) onSubmit();
+        if (trimmed.length >= 3) onSubmit();
       }}
     >
       <label className="sc-field-label" htmlFor={inputId}>
@@ -37,6 +43,7 @@ export function SearchInput({
         <Icon name="search" size={14} />
         <input
           id={inputId}
+          ref={inputRef}
           type="search"
           inputMode="search"
           autoComplete="off"
@@ -49,8 +56,8 @@ export function SearchInput({
       </div>
       <div id={`${inputId}-hint`} className={`sc-field-hint ${isInvalid ? "sc-field-hint--error" : ""}`}>
         {isInvalid
-          ? "Type at least 4 characters — try describing what the code does, not exact keywords."
-          : "Describe behavior in plain English. Semantic search matches meaning, not just text."}
+          ? "Type at least 3 characters — try describing what the code does, not exact keywords."
+          : "Describe behaviour in plain English — related concepts (login ↔ auth ↔ jwt) are matched too."}
       </div>
 
       <div className="sc-search-meta">
@@ -80,7 +87,7 @@ export function SearchInput({
       <button
         type="submit"
         className="sc-btn sc-btn--primary sc-search-submit"
-        disabled={trimmed.length < 4 || isSearching}
+        disabled={trimmed.length < 3 || isSearching}
       >
         {isSearching ? "Searching…" : "Search"}
       </button>

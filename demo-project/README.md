@@ -1,13 +1,21 @@
-# demo-project (demo codebase)
+# demo-project — sample codebase for the SemantiCode demo
 
-This is a small sample codebase used **only** to demonstrate the SemantiCode
-IDE extension during Evaluation 2. It is not part of the actual Semantic
-Code Search Engine implementation — it plays the role of "some developer's
-project" that a user of the extension would have open in VS Code.
+A small, multi-language "online shop" used to demonstrate SemantiCode during
+the viva. It is NOT part of SemantiCode itself — it plays the role of a
+developer's project open in VS Code.
 
-Open **this folder** (`demo-project`) as your VS Code workspace when running
-the extension (see the root-level `README.md` for the exact F5 debug
-instructions). The extension's search results, "Open in Editor" links, and
-line numbers in the mock data are all written to point at real files in
-this folder, so the demo genuinely opens the correct file and line — only
-the *ranking/similarity scores* are mocked, not the file navigation.
+| Folder | Language | What lives there |
+|---|---|---|
+| `api/` | Python | login / JWT, user registration, password hashing, DB session |
+| `services/` | Python | order placement, inventory, email notifications |
+| `web/src/` | TypeScript | cart UI logic, API client with retry |
+| `payments/` | Java | card charge, refunds, webhook signature check |
+
+Good demo queries:
+- *where is the jwt token created*
+- *how are passwords hashed*
+- *where is the cart total calculated*
+- *how do we refund a payment*
+- *retry failed http requests*
+- *send email when an order ships*
+- *lang:java kind:class payment*

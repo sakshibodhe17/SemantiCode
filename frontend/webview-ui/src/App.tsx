@@ -2,25 +2,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
 import { Toast } from "./components/Toast";
-import {
-  defaultSettings,
-  indexingStepsTemplate,
-  mockPreIndexStats,
-  mockSearchHistory,
-  mockWorkspace,
-  suggestedQueries,
-} from "./data/mockData";
+import { defaultSettings, emptyWorkspace, indexingStepsTemplate, suggestedQueries } from "./data/defaults";
 import type {
   HistoryEntry,
   IndexingStepState,
+  IndexProgress,
   ScreenId,
   SearchResult,
-  SemantiCodeSettings,
+  Settings,
   WorkspaceInfo,
 } from "./data/types";
-import type { InboundMessage } from "./messaging";
+import type { InboundMessage, OutboundMessage } from "./messaging";
 import { getVsCodeApi } from "./vscodeApi";
-import { mockSearch } from "./services/searchService";
 import { HistoryScreen } from "./screens/HistoryScreen";
 import { IndexingScreen } from "./screens/IndexingScreen";
 import { SearchScreen } from "./screens/SearchScreen";
@@ -29,156 +22,154 @@ import { WelcomeScreen } from "./screens/WelcomeScreen";
 import { WorkspaceScreen } from "./screens/WorkspaceScreen";
 
 const vscode = getVsCodeApi();
-
-const STEP_DELAY_MS = 420;
+const send = (m: OutboundMessage) => vscode.postMessage(m);
 
 function freshSteps(): IndexingStepState[] {
   return indexingStepsTemplate.map((s) => ({ ...s, status: "pending" as const }));
 }
 
+function stepsFor(progress: IndexProgress): IndexingStepState[] {
+  const order = indexingStepsTemplate.map((s) => s.id);
+  const at = order.indexOf(progress.phase);
+  return indexingStepsTemplate.map((s, i) => ({
+    ...s,
+    status: progress.phase === "done" || i < at ? "done" : i === at ? "active" : "pending",
+  }));
+}
+
 export default function App() {
   const [screen, setScreen] = useState<ScreenId>("welcome");
-  const [workspace, setWorkspace] = useState<WorkspaceInfo>({
-    ...mockWorkspace,
-    status: "not-indexed",
-  });
+  const [workspace, setWorkspace] = useState<WorkspaceInfo>(emptyWorkspace);
 
   const [indexingSteps, setIndexingSteps] = useState<IndexingStepState[]>(freshSteps());
-  const [isIndexing, setIsIndexing] = useState(false);
-  const timeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [progress, setProgress] = useState<IndexProgress | null>(null);
+  const [indexError, setIndexError] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
   const [topK, setTopK] = useState(defaultSettings.topK);
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<SearchResult[] | null>(null);
+  const [resultsLabel, setResultsLabel] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
+  const [focusToken, setFocusToken] = useState(0);
 
-  const [history, setHistory] = useState<HistoryEntry[]>(mockSearchHistory);
-  const [settings, setSettings] = useState<SemantiCodeSettings>(defaultSettings);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Tell the extension host we're mounted so it can send back the real
-  // workspace name/path, persisted settings, and search history. In
-  // standalone browser mode nothing replies, so the mock defaults above
-  // just stay as-is.
-  useEffect(() => {
-    vscode.postMessage({ type: "ready" });
+  const requestId = useRef(0);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>();
 
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2600);
+  }, []);
+
+  // ---- messages from the extension host
+  useEffect(() => {
     function onMessage(event: MessageEvent<InboundMessage>) {
       const msg = event.data;
+      if (!msg || typeof msg !== "object" || !("type" in msg)) return;
       switch (msg.type) {
         case "workspaceInfo":
-          // Real workspace identity (name/path/language) comes from the
-          // extension host. Stats/status stay whatever this webview's
-          // own (mock) indexing flow has already produced, so the real
-          // folder name never gets clobbered by placeholder numbers.
-          setWorkspace((prev) => ({
-            ...prev,
-            name: msg.workspace.name,
-            path: msg.workspace.path,
-            primaryLanguage: msg.workspace.primaryLanguage,
-          }));
+          setWorkspace(msg.workspace);
+          if (msg.workspace.status === "indexed") setIndexError(null);
+          break;
+        case "indexProgress":
+          setProgress(msg.progress);
+          setIndexingSteps(stepsFor(msg.progress));
+          setIndexError(null);
+          break;
+        case "indexError":
+          setIndexError(msg.message);
+          break;
+        case "searchResults":
+          if (msg.requestId !== requestId.current) return; // a newer search is in flight
+          setResults(msg.results);
+          setElapsedMs(msg.elapsedMs);
+          setResultsLabel(null);
+          setSearchError(null);
+          setIsSearching(false);
+          break;
+        case "searchError":
+          if (msg.requestId !== requestId.current) return;
+          setSearchError(msg.message);
+          setResults(null);
+          setIsSearching(false);
+          break;
+        case "externalSearch":
+          setScreen("search");
+          setSelectedResult(null);
+          setQuery("");
+          setResults(msg.results);
+          setResultsLabel(msg.label);
+          setElapsedMs(msg.elapsedMs);
+          setSearchError(null);
+          setIsSearching(false);
           break;
         case "historyUpdated":
           setHistory(msg.history);
           break;
-        case "settingsInitial":
+        case "settings":
           setSettings(msg.settings);
           setTopK(msg.settings.topK);
           break;
         case "openFileAck":
           if (!msg.ok) showToast(`Could not open ${msg.file}`);
           break;
+        case "focusSearch":
+          setScreen("search");
+          setSelectedResult(null);
+          setFocusToken((n) => n + 1);
+          break;
       }
     }
-
     window.addEventListener("message", onMessage);
+    send({ type: "ready" });
     return () => window.removeEventListener("message", onMessage);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      timeouts.current.forEach(clearTimeout);
-    };
-  }, []);
-
-  const showToast = useCallback((message: string) => {
-    setToast(message);
-    const id = setTimeout(() => setToast(null), 2600);
-    timeouts.current.push(id);
-  }, []);
+  }, [showToast]);
 
   const runIndexing = useCallback(() => {
-    timeouts.current.forEach(clearTimeout);
-    timeouts.current = [];
-
     setScreen("indexing");
-    setIsIndexing(true);
-    setWorkspace((w) => ({ ...w, status: "indexing" }));
-    const steps = freshSteps();
-    setIndexingSteps(steps);
-
-    steps.forEach((_, i) => {
-      const t1 = setTimeout(() => {
-        setIndexingSteps((prev) =>
-          prev.map((s, idx) =>
-            idx === i ? { ...s, status: "active" } : idx < i ? { ...s, status: "done" } : s
-          )
-        );
-      }, i * STEP_DELAY_MS);
-      timeouts.current.push(t1);
-    });
-
-    const finishAt = steps.length * STEP_DELAY_MS;
-    const t2 = setTimeout(() => {
-      setIndexingSteps((prev) => prev.map((s) => ({ ...s, status: "done" })));
-      setIsIndexing(false);
-      setWorkspace((w) => ({
-        ...w,
-        status: "indexed",
-        stats: mockWorkspace.stats,
-        lastIndexedAt: new Date().toISOString(),
-      }));
-    }, finishAt);
-    timeouts.current.push(t2);
+    setIndexError(null);
+    setIndexingSteps(freshSteps());
+    setProgress(null);
+    send({ type: "indexWorkspace" });
   }, []);
 
   const runSearch = useCallback(
     (q: string) => {
       const trimmed = q.trim();
-      if (trimmed.length < 4) return;
+      if (trimmed.length < 3) return;
+      const id = ++requestId.current;
       setIsSearching(true);
+      setSearchError(null);
       setSelectedResult(null);
-      const t = setTimeout(() => {
-        const r = mockSearch(trimmed, topK);
-        setResults(r);
-        setIsSearching(false);
-        vscode.postMessage({ type: "searchExecuted", query: trimmed, resultCount: r.length });
-        setHistory((prev) => [
-          {
-            id: `h-${Date.now()}`,
-            query: trimmed,
-            workspace: workspace.name,
-            timestamp: new Date().toISOString(),
-            resultCount: r.length,
-          },
-          ...prev,
-        ]);
-      }, 550);
-      timeouts.current.push(t);
+      setResultsLabel(null);
+      send({ type: "search", query: trimmed, topK, requestId: id });
     },
-    [topK, workspace.name]
+    [topK]
   );
 
-  const handleOpenInEditor = useCallback((result: SearchResult) => {
-    vscode.postMessage({
-      type: "openFile",
-      file: result.file,
-      startLine: result.startLine,
-      endLine: result.endLine,
-    });
-    showToast(`Opening ${result.file}:${result.startLine} …`);
-  }, [showToast]);
+  const handleOpenInEditor = useCallback(
+    (result: SearchResult) => {
+      send({ type: "openFile", file: result.file, startLine: result.startLine, endLine: result.endLine });
+      showToast(`Opening ${result.file}:${result.startLine}`);
+    },
+    [showToast]
+  );
+
+  const updateSetting = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
+    setSettings((s) => ({ ...s, [key]: value }));
+    if (key === "topK") setTopK(value as number);
+    send({ type: "updateSetting", key, value });
+  }, []);
+
+  const isIndexing = workspace.status === "indexing";
+  const canSearch = workspace.status === "indexed" || workspace.engine === "backend";
 
   return (
     <div className="sc-app">
@@ -189,7 +180,6 @@ export default function App() {
           {screen === "welcome" && (
             <WelcomeScreen
               workspace={workspace}
-              preIndexFileCount={mockPreIndexStats.files}
               onIndexWorkspace={runIndexing}
               onSearchCode={() => setScreen("search")}
             />
@@ -198,6 +188,8 @@ export default function App() {
           {screen === "search" && (
             <SearchScreen
               workspace={workspace}
+              canSearch={canSearch}
+              onIndexWorkspace={runIndexing}
               query={query}
               onQueryChange={setQuery}
               onSubmit={() => runSearch(query)}
@@ -205,6 +197,9 @@ export default function App() {
               onTopKChange={setTopK}
               isSearching={isSearching}
               results={results}
+              resultsLabel={resultsLabel}
+              elapsedMs={elapsedMs}
+              error={searchError}
               selectedResult={selectedResult}
               onView={setSelectedResult}
               onClosePreview={() => setSelectedResult(null)}
@@ -214,6 +209,7 @@ export default function App() {
                 setQuery(q);
                 runSearch(q);
               }}
+              focusToken={focusToken}
             />
           )}
 
@@ -222,17 +218,11 @@ export default function App() {
               workspace={workspace}
               onReindex={runIndexing}
               onClearIndex={() => {
-                timeouts.current.forEach(clearTimeout);
-                setIsIndexing(false);
-                setIndexingSteps(freshSteps());
                 setResults(null);
                 setSelectedResult(null);
-                setWorkspace((w) => ({
-                  ...w,
-                  status: "not-indexed",
-                  lastIndexedAt: null,
-                  stats: { files: mockPreIndexStats.files, functions: 0, classes: 0, chunks: 0, indexingTimeSeconds: 0 },
-                }));
+                setIndexingSteps(freshSteps());
+                setProgress(null);
+                send({ type: "clearIndex" });
                 showToast("Index cleared");
               }}
             />
@@ -241,7 +231,9 @@ export default function App() {
           {screen === "indexing" && (
             <IndexingScreen
               steps={indexingSteps}
-              stats={workspace.status !== "not-indexed" ? workspace.stats : null}
+              progress={progress}
+              error={indexError}
+              stats={workspace.status === "indexed" ? workspace.stats : null}
               isComplete={workspace.status === "indexed" && !isIndexing}
               isRunning={isIndexing}
               onStart={runIndexing}
@@ -257,35 +249,15 @@ export default function App() {
                 setScreen("search");
                 runSearch(q);
               }}
-              onClear={() => {
-                setHistory([]);
-                vscode.postMessage({ type: "clearHistory" });
-              }}
+              onClear={() => send({ type: "clearHistory" })}
             />
           )}
 
           {screen === "settings" && (
             <SettingsScreen
               settings={settings}
-              onTopKChange={(n) => {
-                setSettings((s) => ({ ...s, topK: n }));
-                setTopK(n);
-                vscode.postMessage({ type: "updateSetting", key: "topK", value: n });
-              }}
-              onToggleLanguage={(lang) => {
-                setSettings((s) => ({
-                  ...s,
-                  supportedLanguages: {
-                    ...s.supportedLanguages,
-                    [lang]: !s.supportedLanguages[lang],
-                  },
-                }));
-                vscode.postMessage({
-                  type: "updateSetting",
-                  key: "supportedLanguages",
-                  value: { ...settings.supportedLanguages, [lang]: !settings.supportedLanguages[lang] },
-                });
-              }}
+              onChange={updateSetting}
+              onOpenVsCodeSettings={() => send({ type: "openSettingsJson" })}
             />
           )}
         </main>

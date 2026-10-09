@@ -904,3 +904,90 @@
     display: none;
   }
 }
+
+/* ---------- Real-engine additions ---------- */
+
+.tok-match {
+  background: var(--vscode-editor-findMatchHighlightBackground, rgba(234, 92, 0, 0.33));
+  border-radius: 2px;
+}
+body.vscode-light .tok-keyword { color: #0000ff; }
+body.vscode-light .tok-string { color: #a31515; }
+body.vscode-light .tok-comment { color: #008000; }
+body.vscode-light .tok-number { color: #098658; }
+
+.sc-matched {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.sc-chip {
+  display: inline-block;
+  font-size: 10.5px;
+  line-height: 16px;
+  padding: 0 6px;
+  border-radius: 8px;
+  border: 1px solid var(--sc-border);
+  color: var(--sc-fg-muted);
+  white-space: nowrap;
+}
+.sc-chip--exact { border-color: var(--sc-success); color: var(--sc-success); }
+.sc-chip--prefix { border-color: var(--sc-warning); color: var(--sc-warning); }
+.sc-chip--concept { border-style: dashed; }
+
+.sc-kind {
+  margin-left: 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--sc-fg-faint);
+  font-family: var(--vscode-font-family, sans-serif);
+}
+
+.sc-results__label {
+  font-size: 12px;
+  color: var(--sc-fg-muted);
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.sc-preview__why {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--sc-border);
+}
+.sc-preview__why .sc-field-label { margin: 0; }
+.sc-preview__why .sc-matched { margin-top: 0; }
+.sc-preview__code .sc-field-hint { padding: 6px 12px; }
+
+.sc-progressbar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sc-border);
+  overflow: hidden;
+}
+.sc-progressbar__fill {
+  height: 100%;
+  background: var(--vscode-progressBar-background, #0e70c0);
+  transition: width 120ms linear;
+}
+
+.sc-langs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.sc-settings__toggle {
+  margin: 6px 0;
+}
+
+.sc-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

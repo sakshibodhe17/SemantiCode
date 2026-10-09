@@ -13,7 +13,7 @@ from pathlib import Path
 
 ALLOWED_EXTENSIONS = {".zip", ".png", ".jpg", ".jpeg", ".pdf"}
 MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
-UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", "/var/data/uploads"))
+UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", Path(__file__).resolve().parent / "files"))
 
 
 def validate_upload(filename: str, size_bytes: int) -> None:

@@ -49,6 +49,20 @@ def get_db_session():
         session.close()
 
 
+def migrate_schema(base) -> None:
+    """Create tables, and rebuild the code_chunks table if it predates the
+    class_name/language columns. Chunks are derived data (they are recreated
+    by POST /api/index), so dropping that one table is safe."""
+    from sqlalchemy import inspect
+
+    inspector = inspect(engine)
+    if "code_chunks" in inspector.get_table_names():
+        columns = {c["name"] for c in inspector.get_columns("code_chunks")}
+        if not {"class_name", "language"} <= columns:
+            base.metadata.tables["code_chunks"].drop(bind=engine)
+    base.metadata.create_all(bind=engine)
+
+
 def check_connection() -> bool:
     """Ping the database to confirm connectivity (used by health checks)."""
     try:

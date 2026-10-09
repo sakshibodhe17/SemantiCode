@@ -6,14 +6,26 @@ the actual authentication logic. Kept thin on purpose: the route layer
 only deals with request/response shapes and HTTP status codes.
 """
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from backend.auth.jwt import verify_token
 from backend.auth.service import authenticate_user, record_login_attempt
 from backend.db.connection import get_db_session
 from backend.models.user import User
 from backend.schemas.auth import LoginRequest, LoginResponse, RegisterRequest
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+bearer = HTTPBearer(auto_error=False)
+
+
+def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)) -> dict:
+    """FastAPI dependency: validate the Bearer JWT and return its claims."""
+    claims = verify_token(credentials.credentials) if credentials else None
+    if claims is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid token",
+                            headers={"WWW-Authenticate": "Bearer"})
+    return claims
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -50,6 +62,12 @@ def register(payload: RegisterRequest):
         session.add(user)
         session.commit()
     return {"status": "created"}
+
+
+@router.get("/me")
+def me(claims: dict = Depends(current_user)):
+    """Return the identity inside a valid access token (demonstrates JWT verification)."""
+    return {"id": claims["sub"], "username": claims["username"], "role": claims["role"]}
 
 
 @router.post("/logout")

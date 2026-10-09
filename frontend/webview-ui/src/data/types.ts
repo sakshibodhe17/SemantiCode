@@ -1,65 +1,75 @@
-// Shared TypeScript types for the SemantiCode webview UI.
-//
-// These shapes mirror what the future FastAPI backend is expected to
-// return (see docs in the project README, section "Future API"), so
-// swapping mockSearch() for a real fetch() call later should not
-// require changing any component prop types.
+// Types shared with the extension host. Mirrors frontend/extension/src/shared/protocol.ts
+// (the two projects are bundled separately: Node/CommonJS vs. browser/ESM).
 
-export interface WorkspaceInfo {
-  name: string;
-  path: string;
-  primaryLanguage: string;
-  status: "not-indexed" | "indexing" | "indexed";
-  stats: IndexStats;
-  lastIndexedAt: string | null;
-}
+export type IndexStatus = "not-indexed" | "indexing" | "indexed" | "error";
 
-export interface IndexStats {
+export interface WorkspaceStats {
   files: number;
   functions: number;
   classes: number;
   chunks: number;
   indexingTimeSeconds: number;
+  languages: Record<string, number>;
+}
+
+export interface WorkspaceInfo {
+  name: string;
+  path: string;
+  primaryLanguage: string;
+  status: IndexStatus;
+  stats: WorkspaceStats;
+  lastIndexedAt: string | null;
+  engine: "local" | "backend";
+}
+
+export interface MatchedTerm {
+  term: string;
+  via: "exact" | "concept" | "prefix";
 }
 
 export interface SearchResult {
   id: string;
-  similarity: number; // 0-100
+  similarity: number; // 0-100 relevance shown to the user
   name: string;
   className: string | null;
+  kind: string;
+  language: string;
   file: string;
   startLine: number;
   endLine: number;
   code: string[];
+  matched: MatchedTerm[];
 }
 
 export interface HistoryEntry {
   id: string;
   query: string;
   workspace: string;
-  timestamp: string; // ISO string
+  timestamp: string;
   resultCount: number;
 }
 
-export interface IndexingStepState {
-  id: string;
-  label: string;
-  status: "pending" | "active" | "done";
-}
-
-export interface SemantiCodeSettings {
-  embeddingModel: string;
-  modelVersion: string;
-  vectorSearchEngine: string;
-  similarityMetric: string;
+export interface Settings {
+  engine: "local" | "backend";
+  backendUrl: string;
+  rankingModel: string;
   topK: number;
+  queryExpansion: boolean;
+  autoIndexOnSave: boolean;
   supportedLanguages: Record<string, boolean>;
 }
 
-export type ScreenId =
-  | "welcome"
-  | "search"
-  | "workspace"
-  | "indexing"
-  | "history"
-  | "settings";
+export interface IndexProgress {
+  phase: "detect" | "scan" | "parse" | "build" | "save" | "done";
+  current: number;
+  total: number;
+  message: string;
+}
+
+export type ScreenId = "welcome" | "search" | "workspace" | "indexing" | "history" | "settings";
+
+export interface IndexingStepState {
+  id: IndexProgress["phase"];
+  label: string;
+  status: "pending" | "active" | "done";
+}

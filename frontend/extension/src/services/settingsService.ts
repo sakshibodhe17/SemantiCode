@@ -1,56 +1,83 @@
-// Real read/write bridge to VS Code's `semanticode.*` configuration
-// (contributed in package.json). Everything here is genuine — no mock
-// data — because settings are one of the few pieces of this milestone
-// that map cleanly onto an existing, real VS Code API.
+// Read/write bridge to the `semanticode.*` settings contributed in
+// package.json. Every value shown on the Settings screen is a real VS Code
+// setting, so it can also be edited from settings.json / the Settings UI.
 
 import * as vscode from "vscode";
-import type { HostSettings } from "../types";
+import { ALL_LANGUAGES } from "../engine/chunker";
+import type { Settings } from "../shared/protocol";
 
 const SECTION = "semanticode";
 
-// Descriptive-only fields (no real config exists yet for these —
-// they represent architecture decisions, not user-tunable values).
-const DISPLAY_ONLY = {
-  embeddingModelLabel: "CodeBERT",
-  vectorSearchEngine: "FAISS",
-  similarityMetric: "Cosine Similarity",
-};
+export const DEFAULT_EXCLUDES = [
+  "**/node_modules/**", "**/.git/**", "**/dist/**", "**/out/**", "**/build/**",
+  "**/.venv/**", "**/venv/**", "**/env/**", "**/__pycache__/**", "**/.next/**",
+  "**/target/**", "**/coverage/**", "**/vendor/**", "**/*.min.js", "**/*.bundle.js",
+];
 
-export function readSettings(): HostSettings {
-  const config = vscode.workspace.getConfiguration(SECTION);
-  const topK = config.get<number>("topK", 10);
-  const embeddingModel = config.get<string>("embeddingModel", "microsoft/codebert-base");
-  const languages = config.get<string[]>("supportedLanguages", [
-    "Python", "JavaScript", "TypeScript", "Java", "C", "C++", "Go",
-  ]);
+function cfg() {
+  return vscode.workspace.getConfiguration(SECTION);
+}
 
+export function enabledLanguages(): string[] {
+  return cfg().get<string[]>("supportedLanguages", ALL_LANGUAGES);
+}
+
+export function excludeGlobs(): string[] {
+  return [...DEFAULT_EXCLUDES, ...cfg().get<string[]>("exclude", [])];
+}
+
+export function maxFiles(): number {
+  return Math.max(1, cfg().get<number>("maxFiles", 5000));
+}
+
+export function maxFileSizeBytes(): number {
+  return Math.max(1, cfg().get<number>("maxFileSizeKB", 512)) * 1024;
+}
+
+export function readSettings(): Settings {
+  const c = cfg();
+  const enabled = new Set(enabledLanguages().map((l) => l.toLowerCase()));
+  const engine = c.get<string>("engine", "local") === "backend" ? "backend" : "local";
   return {
-    embeddingModel: DISPLAY_ONLY.embeddingModelLabel,
-    modelVersion: embeddingModel,
-    vectorSearchEngine: DISPLAY_ONLY.vectorSearchEngine,
-    similarityMetric: DISPLAY_ONLY.similarityMetric,
-    topK,
-    supportedLanguages: Object.fromEntries(languages.map((l) => [l, true])),
+    engine,
+    backendUrl: c.get<string>("backendUrl", "http://127.0.0.1:8000"),
+    rankingModel:
+      engine === "local"
+        ? "BM25F + code-aware query expansion (offline)"
+        : "FastAPI backend (/api/search)",
+    topK: c.get<number>("topK", 10),
+    queryExpansion: c.get<boolean>("queryExpansion", true),
+    autoIndexOnSave: c.get<boolean>("autoIndexOnSave", true),
+    supportedLanguages: Object.fromEntries(ALL_LANGUAGES.map((l) => [l, enabled.has(l.toLowerCase())])),
   };
 }
 
-export async function updateSetting(key: string, value: unknown): Promise<void> {
-  const config = vscode.workspace.getConfiguration(SECTION);
-
-  if (key === "topK" && typeof value === "number") {
-    await config.update("topK", value, vscode.ConfigurationTarget.Global);
-    return;
+export async function updateSetting(key: keyof Settings, value: unknown): Promise<void> {
+  const c = cfg();
+  const target = vscode.ConfigurationTarget.Global;
+  switch (key) {
+    case "topK":
+      if (typeof value === "number" && value >= 1 && value <= 50) await c.update("topK", Math.round(value), target);
+      return;
+    case "queryExpansion":
+    case "autoIndexOnSave":
+      if (typeof value === "boolean") await c.update(key, value, target);
+      return;
+    case "engine":
+      if (value === "local" || value === "backend") await c.update("engine", value, target);
+      return;
+    case "backendUrl":
+      if (typeof value === "string" && /^https?:\/\//.test(value)) await c.update("backendUrl", value, target);
+      return;
+    case "supportedLanguages":
+      if (value && typeof value === "object") {
+        const enabled = Object.entries(value as Record<string, boolean>)
+          .filter(([, on]) => on)
+          .map(([lang]) => lang);
+        await c.update("supportedLanguages", enabled, target);
+      }
+      return;
+    default:
+      return; // read-only / derived values
   }
-
-  if (key === "supportedLanguages" && value && typeof value === "object") {
-    const enabled = Object.entries(value as Record<string, boolean>)
-      .filter(([, on]) => on)
-      .map(([lang]) => lang);
-    await config.update("supportedLanguages", enabled, vscode.ConfigurationTarget.Global);
-    return;
-  }
-
-  // Other keys (embeddingModel, vectorSearchEngine, similarityMetric)
-  // are display-only placeholders for this milestone — nothing to
-  // persist yet.
 }

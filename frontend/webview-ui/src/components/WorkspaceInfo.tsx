@@ -44,6 +44,16 @@ export function WorkspaceInfoPanel({
             />
           </dd>
         </div>
+        <div className="sc-kv__row">
+          <dt>Engine</dt>
+          <dd>{workspace.engine === "backend" ? "FastAPI backend" : "Local (offline)"}</dd>
+        </div>
+        {workspace.stats.indexingTimeSeconds > 0 && (
+          <div className="sc-kv__row">
+            <dt>Index time</dt>
+            <dd className="sc-mono">{workspace.stats.indexingTimeSeconds}s</dd>
+          </div>
+        )}
         {workspace.lastIndexedAt && (
           <div className="sc-kv__row">
             <dt>Last indexed</dt>
@@ -59,20 +69,29 @@ export function WorkspaceInfoPanel({
         <MiniStat label="chunks" value={workspace.stats.chunks} />
       </div>
 
+      {Object.keys(workspace.stats.languages).length > 0 && (
+        <div className="sc-langs">
+          {Object.entries(workspace.stats.languages)
+            .sort((a, b) => b[1] - a[1])
+            .map(([lang, n]) => (
+              <span key={lang} className="sc-chip">{lang} · {n}</span>
+            ))}
+        </div>
+      )}
+
       <div className="sc-actions">
-        <button type="button" className="sc-btn sc-btn--secondary" onClick={onReindex}>
+        <button type="button" className="sc-btn sc-btn--secondary" onClick={onReindex} disabled={workspace.status === "indexing"}>
           Re-index Workspace
         </button>
-        <button type="button" className="sc-btn sc-btn--danger-outline" onClick={onClearIndex}>
+        <button type="button" className="sc-btn sc-btn--danger-outline" onClick={onClearIndex} disabled={workspace.status !== "indexed"}>
           Clear Index
         </button>
       </div>
 
       <p className="sc-note">
-        SemantiCode indexes the folder currently open in VS Code — there's no
-        need to zip or upload your project. Importing an external
-        repository/ZIP is planned as a secondary, optional capability (see
-        project scope).
+        SemantiCode indexes the folder currently open in VS Code — no zipping or
+        uploading. The index is stored locally in VS Code's workspace storage and
+        is updated automatically when you save a file.
       </p>
     </div>
   );

@@ -3,7 +3,7 @@
 // the Extension Development Host / restarting VS Code.
 
 import * as vscode from "vscode";
-import type { HostHistoryEntry } from "../types";
+import type { HistoryEntry as HostHistoryEntry } from "../shared/protocol";
 
 const KEY = "semanticode.searchHistory";
 const MAX_ENTRIES = 30;
@@ -21,7 +21,9 @@ export class HistoryService {
       id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       timestamp: new Date().toISOString(),
     };
-    const next = [full, ...this.getAll()].slice(0, MAX_ENTRIES);
+    // newest first, and the same query is not stored twice in a row
+    const rest = this.getAll().filter((h) => h.query.toLowerCase() !== entry.query.toLowerCase());
+    const next = [full, ...rest].slice(0, MAX_ENTRIES);
     this.context.globalState.update(KEY, next);
     return next;
   }

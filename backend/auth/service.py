@@ -7,7 +7,7 @@ from the HTTP route layer (see backend/routes/auth.py) so that the core
 authentication logic can be unit tested without spinning up FastAPI.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 
 from backend.auth.jwt import create_access_token
 from backend.db.connection import get_db_session
@@ -50,5 +50,5 @@ def authenticate_user(username: str, password: str):
 def record_login_attempt(username: str, success: bool) -> None:
     """Persist a login attempt for auditing and rate-limiting."""
     with get_db_session() as session:
-        session.add(LoginAttempt(username=username, success=success, attempted_at=datetime.utcnow()))
+        session.add(LoginAttempt(username=username, success=success, attempted_at=datetime.now(timezone.utc)))
         session.commit()

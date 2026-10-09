@@ -1,16 +1,19 @@
-import type { IndexingStepState, IndexStats } from "../data/types";
+import type { IndexingStepState, IndexProgress, WorkspaceStats } from "../data/types";
 import { Icon } from "./Icon";
 import { StatusBadge } from "./StatusBadge";
 
 export function IndexingProgress({
   steps,
+  progress,
   stats,
   isComplete,
 }: {
   steps: IndexingStepState[];
-  stats: IndexStats | null;
+  progress: IndexProgress | null;
+  stats: WorkspaceStats | null;
   isComplete: boolean;
 }) {
+  const pct = progress && progress.phase === "parse" && progress.total ? Math.round((progress.current / progress.total) * 100) : null;
   return (
     <div className="sc-indexing">
       <ol className="sc-indexing__steps">
@@ -26,23 +29,32 @@ export function IndexingProgress({
               )}
             </span>
             {step.label}
+            {step.id === "parse" && step.status === "active" && pct !== null && (
+              <span className="sc-fg-faint sc-mono"> {progress!.current}/{progress!.total}</span>
+            )}
           </li>
         ))}
       </ol>
+      {pct !== null && !isComplete && (
+        <div className="sc-progressbar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+          <div className="sc-progressbar__fill" style={{ width: `${pct}%` }} />
+        </div>
+      )}
+      {progress && <p className="sc-field-hint sc-truncate" title={progress.message}>{progress.message}</p>}
 
-      {stats && (
+      {stats && isComplete && (
         <div className="sc-indexing__stats">
           <div className="sc-stat-grid">
             <Stat label="Files" value={stats.files} />
             <Stat label="Functions" value={stats.functions} />
             <Stat label="Classes" value={stats.classes} />
-            <Stat label="Code chunks" value={stats.chunks} />
+            <Stat label="Code units" value={stats.chunks} />
           </div>
           <div className="sc-indexing__footer">
             <span className="sc-fg-faint">
               Indexing time: <span className="sc-mono">{stats.indexingTimeSeconds}s</span>
             </span>
-            {isComplete && <StatusBadge kind="indexed" />}
+            <StatusBadge kind="indexed" />
           </div>
         </div>
       )}

@@ -1,16 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// VS Code webviews load assets via a webview.asWebviewUri() rewritten
-// path, so the bundle must use relative asset URLs (`base: "./"`) and
-// predictable, unhashed output filenames — the extension host
-// references `dist/main.js` / `dist/main.css` directly rather than
-// parsing a manifest.
+// The bundle is written straight into the extension folder
+// (frontend/extension/webview) so it ships inside the .vsix package.
+// VS Code webviews load assets via webview.asWebviewUri(), so the bundle
+// uses relative URLs (`base: "./"`) and fixed, unhashed file names that
+// SidebarProvider.ts references directly (main.js / main.css).
 export default defineConfig({
   plugins: [react()],
   base: "./",
   build: {
-    outDir: "dist",
+    outDir: "../extension/webview",
     emptyOutDir: true,
     rollupOptions: {
       output: {
