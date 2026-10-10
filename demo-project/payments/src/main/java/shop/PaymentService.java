@@ -40,3 +40,15 @@ public class PaymentService {
         return expected.equalsIgnoreCase(signatureHex);
     }
 }
+
+/** Client for the external card payment gateway (implemented by the gateway SDK). */
+interface GatewayClient {
+    Receipt charge(String cardToken, BigDecimal amount, String reference);
+
+    Receipt find(String paymentId);
+
+    Receipt refund(String paymentId, BigDecimal amount);
+}
+
+/** Result of a charge or refund returned by the gateway. */
+record Receipt(String paymentId, BigDecimal amount, String status) {}
