@@ -25,6 +25,8 @@ export interface WorkspaceInfo {
   stats: WorkspaceStats;
   lastIndexedAt: string | null;
   engine: "local" | "backend";
+  /** Example questions generated from this project's own code. */
+  suggestions: string[];
 }
 
 export interface MatchedTerm {

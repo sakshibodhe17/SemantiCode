@@ -73,3 +73,37 @@ export function relatedTerms(stemmedTerm: string): string[] {
 }
 
 export const conceptGroupCount = CONCEPT_GROUPS.length;
+
+/**
+ * Question templates for "Suggested queries". After indexing, each template
+ * is scored by how many code units in THIS project contain its words, and
+ * the best-covered ones are shown — so suggestions always match the
+ * project that is open (a payments app gets payment questions, a web app
+ * gets route questions) and always return results.
+ */
+export const QUESTION_TEMPLATES: { terms: string[]; question: string }[] = [
+  { terms: ["login", "authenticate", "credential"], question: "Where is user login handled?" },
+  { terms: ["jwt", "token", "bearer"], question: "Where is the JWT token created?" },
+  { terms: ["password", "hash", "bcrypt", "pbkdf2"], question: "How are passwords hashed?" },
+  { terms: ["permission", "role", "authorize", "admin"], question: "How are user roles and permissions checked?" },
+  { terms: ["register", "signup"], question: "Where are new users registered?" },
+  { terms: ["database", "sqlite", "sql", "engine", "session", "connect"], question: "Where is the database connection created?" },
+  { terms: ["upload", "multipart", "attachment"], question: "Where are file uploads handled?" },
+  { terms: ["route", "router", "endpoint", "controller"], question: "Where are API routes defined?" },
+  { terms: ["exception", "error", "raise", "throw"], question: "How are errors handled?" },
+  { terms: ["validate", "validation", "sanitize"], question: "Where is input validated?" },
+  { terms: ["payment", "charge", "refund", "invoice"], question: "How are payments processed?" },
+  { terms: ["email", "smtp", "mail"], question: "Where is the email sent?" },
+  { terms: ["cart", "order", "checkout"], question: "Where is the order total calculated?" },
+  { terms: ["stock", "inventory"], question: "How is stock updated?" },
+  { terms: ["retry", "fetch", "request", "http"], question: "Where are HTTP requests made?" },
+  { terms: ["cache", "redis", "memo"], question: "Where is data cached?" },
+  { terms: ["config", "env", "settings", "environ"], question: "Where is configuration loaded?" },
+  { terms: ["log", "logger", "logging"], question: "Where is logging set up?" },
+  { terms: ["test", "assert", "mock"], question: "Where are the tests?" },
+  { terms: ["parse", "parser"], question: "Where is input parsed?" },
+  { terms: ["search", "index", "rank"], question: "How does the search ranking work?" },
+  { terms: ["render", "component", "view", "screen"], question: "Where is the UI rendered?" },
+  { terms: ["webhook", "signature", "hmac"], question: "How are webhooks verified?" },
+  { terms: ["schedule", "cron", "queue", "worker"], question: "Where are background jobs scheduled?" },
+];

@@ -19,6 +19,7 @@ const workspace: WorkspaceInfo = {
   status: "not-indexed",
   lastIndexedAt: null,
   engine: "local",
+  suggestions: [],
   stats: { files: 0, functions: 0, classes: 0, chunks: 0, indexingTimeSeconds: 0, languages: {} },
 };
 
@@ -75,6 +76,7 @@ export function handleDevMessage(message: unknown): void {
         workspace.status = "indexed";
         workspace.lastIndexedAt = new Date().toISOString();
         workspace.stats = { files: 6, functions: 9, classes: 2, chunks: 14, indexingTimeSeconds: 0.1, languages: { Python: 6 } };
+        workspace.suggestions = ["Where is the JWT token created?", "How are passwords hashed?", "Where are file uploads handled?"];
         send({ type: "workspaceInfo", workspace: { ...workspace } });
       }, 150 * (phases.length + 1));
       break;
@@ -82,6 +84,7 @@ export function handleDevMessage(message: unknown): void {
     case "clearIndex":
       workspace.status = "not-indexed";
       workspace.stats = { files: 0, functions: 0, classes: 0, chunks: 0, indexingTimeSeconds: 0, languages: {} };
+      workspace.suggestions = [];
       send({ type: "workspaceInfo", workspace: { ...workspace } });
       break;
     case "search": {

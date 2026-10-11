@@ -204,7 +204,7 @@ export default function App() {
               onView={setSelectedResult}
               onClosePreview={() => setSelectedResult(null)}
               onOpenInEditor={handleOpenInEditor}
-              suggestedQueries={suggestedQueries}
+              suggestedQueries={workspace.suggestions.length ? workspace.suggestions : suggestedQueries}
               onPickSuggested={(q) => {
                 setQuery(q);
                 runSearch(q);

@@ -14,7 +14,7 @@
 // milliseconds for tens of thousands of chunks.
 
 import type { ChunkKind, CodeChunk } from "./chunker";
-import { relatedTerms } from "./synonyms";
+import { QUESTION_TEMPLATES, relatedTerms } from "./synonyms";
 import { splitIdentifiers, stem, tokenize } from "./tokenizer";
 
 const K1 = 1.2;
@@ -306,6 +306,29 @@ export class SearchIndex {
   }
 
   /** Index terms (readable) — used for "Find similar code" explanations / tests. */
+  /**
+   * Suggested questions for THIS project: each template is scored by how many
+   * code units contain its words (document frequency), and the best-covered
+   * ones are returned. Built only from words that really exist in the index.
+   */
+  suggestQueries(limit = 5): string[] {
+    this.rebuild();
+    const scored: { question: string; score: number }[] = [];
+    for (const t of QUESTION_TEMPLATES) {
+      // cheap pre-filter: at least one of the template's key words is in this project
+      if (!t.terms.some((term) => tokenize(term).some((tok) => this.postings.has(tok)))) continue;
+      // keep the question only if one code unit matches ALL of its words exactly
+      const words = Array.from(new Set(tokenize(t.question)));
+      const top = this.search(t.question, { topK: 1, expand: false })[0];
+      if (!top || top.matched.length < words.length || top.matched.some((m) => m.via !== "exact")) continue;
+      scored.push({ question: t.question, score: top.score });
+    }
+    return scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((s) => s.question);
+  }
+
   vocabularySize(): number {
     this.rebuild();
     return this.postings.size;

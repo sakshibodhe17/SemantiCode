@@ -82,6 +82,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider, vscode.Dispo
       status: this.indexService.status,
       lastIndexedAt: this.indexService.builtAt,
       engine: readSettings().engine,
+      suggestions: this.indexService.suggestions(5),
       stats: {
         files: stats.files,
         functions: stats.functions,

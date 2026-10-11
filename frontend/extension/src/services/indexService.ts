@@ -65,6 +65,11 @@ export class IndexService implements vscode.Disposable {
     return this.index.stats();
   }
 
+  /** Suggested questions generated from the indexed code (empty if not indexed). */
+  suggestions(limit = 5): string[] {
+    return this.index.isEmpty ? [] : this.index.suggestQueries(limit);
+  }
+
   isReady(): boolean {
     return this.status === "indexed" && !this.index.isEmpty;
   }

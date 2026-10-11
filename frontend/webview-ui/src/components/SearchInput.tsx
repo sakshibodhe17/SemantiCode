@@ -104,7 +104,7 @@ export function SuggestedQueries({
 }) {
   return (
     <div className="sc-suggested">
-      <div className="sc-field-label">Suggested queries</div>
+      <div className="sc-field-label">Suggested for this project</div>
       <ul>
         {queries.map((q) => (
           <li key={q}>

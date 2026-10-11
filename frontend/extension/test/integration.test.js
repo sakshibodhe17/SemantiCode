@@ -57,6 +57,8 @@ const check = (cond, msg) => { console.log((cond ? "PASS " : "FAIL ") + msg); if
   check(posted.some((m) => m.type === "indexProgress" && m.progress.phase === "parse"), "progress events streamed");
   check(posted.some((m) => m.type === "indexProgress" && m.progress.phase === "done"), "done event streamed");
   check(fs.existsSync(path.join(storage, "index.json")), "index persisted to workspace storage");
+  console.log("     suggestions:", JSON.stringify(info.workspace.suggestions));
+  check(info.workspace.suggestions.length >= 3, "suggested queries generated from the project");
 
   await handler({ type: "search", query: "Where is the JWT token created?", topK: 5, requestId: 2 });
   const r = last("searchResults");

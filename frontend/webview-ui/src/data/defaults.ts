@@ -11,9 +11,11 @@ export const emptyWorkspace: WorkspaceInfo = {
   status: "not-indexed",
   lastIndexedAt: null,
   engine: "local",
+  suggestions: [],
   stats: { files: 0, functions: 0, classes: 0, chunks: 0, indexingTimeSeconds: 0, languages: {} },
 };
 
+// Fallback examples, used only until the project has been indexed.
 export const suggestedQueries: string[] = [
   "Where is user authentication implemented?",
   "Where is the database connection created?",
