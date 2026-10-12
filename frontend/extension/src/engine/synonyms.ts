@@ -74,6 +74,7 @@ export function relatedTerms(stemmedTerm: string): string[] {
 
 export const conceptGroupCount = CONCEPT_GROUPS.length;
 
+
 /**
  * Question templates for "Suggested queries". After indexing, each template
  * is scored by how many code units in THIS project contain its words, and

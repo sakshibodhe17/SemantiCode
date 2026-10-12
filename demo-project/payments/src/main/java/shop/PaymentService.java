@@ -5,6 +5,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.util.HexFormat;
 
+
 /** Talks to the card payment gateway: charges, refunds and webhooks. */
 public class PaymentService {
     private final GatewayClient gateway;

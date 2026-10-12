@@ -52,3 +52,4 @@ def record_login_attempt(username: str, success: bool) -> None:
     with get_db_session() as session:
         session.add(LoginAttempt(username=username, success=success, attempted_at=datetime.now(timezone.utc)))
         session.commit()
+
