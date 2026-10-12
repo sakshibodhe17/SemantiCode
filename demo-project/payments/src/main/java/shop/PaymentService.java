@@ -3,6 +3,8 @@ package shop;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.HexFormat;
 
 
@@ -36,9 +38,15 @@ public class PaymentService {
     /** Verify the HMAC signature the gateway attaches to webhook calls. */
     public boolean verifyWebhookSignature(String payload, String signatureHex) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(new SecretKeySpec(webhookSecret.getBytes(), "HmacSHA256"));
-        String expected = HexFormat.of().formatHex(mac.doFinal(payload.getBytes()));
-        return expected.equalsIgnoreCase(signatureHex);
+        mac.init(new SecretKeySpec(webhookSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        byte[] expected = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+        byte[] signature;
+        try {
+            signature = HexFormat.of().parseHex(signatureHex);
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
+        return MessageDigest.isEqual(expected, signature);
     }
 }
 
